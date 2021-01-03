@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<meta charset="utf-8">
+</head>
+<body>
+<svg id="drawing" viewBox="-10 -30 60 60" width="400" height="400" xmlns="http://www.w3.org/2000/svg"></svg>
+<script type="text/javascript">
+	class Point {
+		constructor(x, y) {
+			this.x = x;
+			this.y = y;
+			this.resolved = false;
+			this.segment = null;
+			this.links = [];
+			this._name = null;
+		}
+
+		static anchor(x, y, name) {
+			const a = new Point(x, y);
+			a.resolved = true;
+			a._name = name;
+			return a;
+		}
+
+		link(p, firstOrSecondIntersection) {
+			const link = new Link(this, p, firstOrSecondIntersection);
+			p.links.push(link);
+			this.links.push(link);
+		}
+
+		resolve(p) {
+			this.x = p.x;
+			this.y = p.y;
+			this.resolved = true;
+		}
+
+		distance(p) {
+			return Math.sqrt(
+				Math.pow(Math.abs(this.x - p.x), 2) + 
+				Math.pow(Math.abs(this.y - p.y), 2)
+			);
+		}
+
+		add(p) {
+			return new Point(this.x + p.x, this.y + p.y);
+		}
+
+		sub(p) {
+			return new Point(this.x - p.x, this.y - p.y);
+		}
+
+		mul(n) {
+			return new Point(this.x * n, this.y * n);
+		}
+
+		get name() {
+			if (this.segment) {
+				const idx = this.segment.points.indexOf(this);
+				return `${this.segment.name}[${idx}]`;
+			} else {
+				return this._name;
+			}
+		}
+	}
+
+	class Link {
+		constructor(a, b, firstOrSecondIntersection = true) {
+			this.a = a;
+			this.b = b;
+			this.firstOrSecondIntersection = firstOrSecondIntersection;
+		}
+
+		otherPoint(p) {
+			if (this.a === p) {
+				return this.b;
+			}
+			if (this.b === p) {
+				return this.a;
+			}
+			return;
+		}
+
+		forSegment(s) {
+			if (this.a.segment === s) {
+				return a;
+			}
+			if (this.b.segment === s) {
+				return b;
+			}
+			return;
+		}
+
+		get resolved() {
+			return this.a.resolved && this.b.resolved;
+		}
+	}
+
+	class Segment {
+		constructor(a, b, name) {
+			a.segment = this;
+			b.segment = this;
+			this.points = [a, b];
+			this.name = name;
+		}
+
+		get a() {
+			return this.points[0];
+		}
+
+		get b() {
+			return this.points[1];
+		}
+
+		static withLength(len, name) {
+			return new Segment(new Point(0, 0), new Point(len, 0), name);
+		}
+
+		addPointAt(len) {
+
+		}
+
+		get length() {
+			return this.a.distance(this.b);
+		}
+	}
+
+	function renderSegment(segment, color) {
+		const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+		line.setAttribute("x1", segment.a.x);
+		line.setAttribute("y1", segment.a.y);
+		line.setAttribute("x2", segment.b.x);
+		line.setAttribute("y2", segment.b.y);
+		line.setAttribute("stroke", color);
+		line.setAttribute("stroke-linecap", "round");
+		return line;
+	}
+
+	function renderPoint(p, color) {
+		const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+		circle.setAttribute("cx", p.x);
+		circle.setAttribute("cy", p.y);
+		circle.setAttribute("r", 1);
+		circle.setAttribute("fill", color);
+		return circle;
+	}
+
+	function renderGuideCircle(p, r) {
+		const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+		circle.setAttribute("cx", p.x);
+		circle.setAttribute("cy", p.y);
+		circle.setAttribute("r", r);
+		circle.setAttribute("stroke", "grey");
+		circle.setAttribute("fill", "transparent");
+		circle.setAttribute("stroke-width", "0.1");
+		return circle;
+	}
+
+	function findUnresolvedDirectLink(a, b) {
+		for (const aStartLink of a.links) {
+			const aSegmentStart = aStartLink.otherPoint(a);
+			for (const bStartLink of b.links) {
+				const bSegmentStart = bStartLink.otherPoint(b);
+				// now we have two segments linked to a and b, and we need to find if they are linked together at a point
+				for (const aSegmentEnd of aSegmentStart.segment.points) {
+					if (aSegmentEnd === aSegmentStart) {
+						continue;
+					}
+					for (const bSegmentEnd of bSegmentStart.segment.points) {
+						if (bSegmentEnd === bSegmentStart) {
+							continue;
+						}
+						const link = aSegmentEnd.links.find(l => bSegmentEnd.links.includes(l) && !l.resolved);
+						if (link) {
+							return {aStart: aSegmentStart, bStart: bSegmentStart, link};
+						}
+					}
+				}
+			}
+		}
+	}
+
+	function circleIntersection(p1, r1, p2, r2, firstOrSecondIntersection) {
+		const d = p1.distance(p2);
+		if (d === 0 || d < Math.abs(r1 - r2) || d > (r1 + r2)) {
+			return;
+		}
+		const a = (r1*r1 - r2*r2 + d*d) / (2*d);
+		const h = Math.sqrt(r1*r1 - a*a);
+		const p3 = p2.sub(p1).mul(a/d).add(p1);
+		const whichPoint = firstOrSecondIntersection ? 1 : -1;
+		const x4 = p3.x + whichPoint * (h / d) * (p2.y - p1.y);
+		const y4 = p3.y - whichPoint * (h / d) * (p2.x - p1.x);
+		return new Point(x4, y4);
+	}
+
+	function simulatePoint(a, resolvedPoints) {
+		// we need to split up the anchor tree into joints like: a ---- link ---- b where we have determined the location of a and b
+		// so first we need to find all these between the anchor points?
+		const newResolvedPoints = [];
+		for (const b of resolvedPoints) {
+			if (b === a) {
+				continue;
+			}
+			const linkData = findUnresolvedDirectLink(a, b);
+			if (linkData) {
+				const {aStart, bStart, link} = linkData;
+				console.log(`resolving link between ${aStart.segment.name} (${aStart.segment.length}) and ${bStart.segment.name} (${bStart.segment.length})`);
+				const p = circleIntersection(a, aStart.segment.length, b, bStart.segment.length, linkData.link.firstOrSecondIntersection);
+				if (p) {
+					aStart.resolve(a);
+					bStart.resolve(b);
+					link.a.resolve(p);
+					link.b.resolve(p);
+					console.log(`resolved as ${aStart.segment.name} (${aStart.segment.length}) and ${bStart.segment.name} (${bStart.segment.length})`);
+					newResolvedPoints.push(link.a);
+					newResolvedPoints.push(link.b);
+				} else {
+					console.log("could not resolve link");
+				}
+			}
+		}
+		resolvedPoints = resolvedPoints.concat(newResolvedPoints);
+		for (const p of newResolvedPoints) {
+			simulatePoint(p, resolvedPoints);
+		}
+	}
+
+	function simulate(resolvedPoints) {
+		// we need to split up the anchor tree into joints like: a ---- link ---- b where we have determined the location of a and b
+		// so first we need to find all these between the anchor points?
+		for (const a of resolvedPoints) {
+			simulatePoint(a, resolvedPoints);
+		}
+	}
+
+	function simulateSuspension(input) {
+		const shock = Segment.withLength(input.shockLen, "shock");
+		const bottomArm = Segment.withLength(25, "bottomArm");
+		const topArm = Segment.withLength(20, "topArm");
+		const kingPin = Segment.withLength(10, "kingPin");
+
+		const anchors = {
+			shock: Point.anchor(10, -10 - 6.5, "anchors.shock"),
+			bottomArm: Point.anchor(0, 0, "anchors.bottomArm"),
+			topArm: Point.anchor(5, -10, "anchors.topArm"),
+		};
+
+		anchors.shock.link(shock.a);
+		shock.b.link(bottomArm.b); // should be c (point in between)
+
+		anchors.bottomArm.link(bottomArm.a);
+		anchors.topArm.link(topArm.a);
+
+		topArm.b.link(kingPin.a, false);
+		bottomArm.b.link(kingPin.b);
+
+		simulate(Object.values(anchors));
+
+		return [
+			renderGuideCircle(anchors.shock, shock.length),
+			renderGuideCircle(anchors.bottomArm, bottomArm.length),
+			renderGuideCircle(bottomArm.b, kingPin.length),
+			renderGuideCircle(anchors.topArm, topArm.length),
+			
+			renderSegment(shock, "blue"),
+			renderSegment(bottomArm, "red"),
+			renderSegment(topArm, "red"),
+			renderSegment(kingPin, "green"),
+
+			renderPoint(anchors.shock, "red"),
+			renderPoint(anchors.topArm, "red"),
+			renderPoint(anchors.bottomArm, "red"),
+		];
+	}
+
+	/*let input = {
+		shock: 25,
+		bottomArm: 25,
+		topArm: 20,
+		kingPin: 10,
+		shockAnchor: 
+	}
+
+	function createInputUI(input, callback) {
+
+	}*/
+
+	function run(sim, input) {
+		drawing.innerHTML = "";
+		const output = sim(input);
+		for (n of output) {
+			drawing.appendChild(n);
+		}
+	}
+
+	run(simulateSuspension, {shockLen: 15});	
+</script>
+</body>
+</html>
