@@ -1,3 +1,5 @@
+import {Point} from "./geom.js";
+
 export class LinkSource {
 	constructor() {
 		this.links = new Set();
@@ -71,8 +73,12 @@ export class Mount extends LinkSource {
 }
 
 export class Anchor extends LinkSource {
-	constructor(p) {
+	constructor(xorP, y) {
 		super();
-		this.point = p;
+		if (typeof xorP === "number") {
+			this.point = new Point(xorP, y);
+		} else {
+			this.point = xorP;
+		}
 	}
 }

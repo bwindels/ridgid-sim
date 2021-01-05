@@ -9,7 +9,6 @@
 <script type="module">
 	import {Rod} from "./src/rod.js";
 	import {Anchor} from "./src/link.js";
-	import {Point} from "./src/geom.js";
 	import {resolve} from "./src/resolve.js";
 
 	function run(sim, input) {
@@ -74,12 +73,12 @@ function suspension(input) {
 	const shock = new Rod(input.shockLen, {name: "shock", color: "blue"});
 	const bottomArm = new Rod(25, {name: "bottomArm", color: "red"});
 	const topArm = new Rod(20, {name: "topArm", color: "red"});
-	const kingPin = new Rod(10, {name: "kingPin", color: "blue"});
+	const kingPin = new Rod(10, {name: "kingPin", color: "green"});
 
 	const anchors = {
-		shock: new Anchor(new Point(5, -5), "shock"),
-		bottomArm: new Anchor(new Point(0, 0), "bottomArm"),
-		topArm: new Anchor(new Point(5, -10), "topArm"),
+		shock: new Anchor(5, -5),
+		bottomArm: new Anchor(0, 0),
+		topArm: new Anchor(5, -10),
 	};
 
 	anchors.shock.link(shock.start);
@@ -94,7 +93,7 @@ function suspension(input) {
 	return Object.values(anchors);
 }
 
-	run(suspension, {shockLen: 15});	
+	run(suspension, {shockLen: 10}); //17 fails	
 
 </script>
 </body>
