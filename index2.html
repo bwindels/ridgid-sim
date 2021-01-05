@@ -20,80 +20,51 @@
 		}
 	}
 
-	// let start = 15;
-	// const duration = 2000;
-	// let targetStart = performance.now();
-	// let target = 10;
+	function suspension(input) {
+		const shock = new Rod(input.shockLen, {name: "shock", color: "blue"});
+		const bottomArm = new Rod(25, {name: "bottomArm", color: "red"});
+		const topArm = new Rod(20, {name: "topArm", color: "red"});
+		const kingPin = new Rod(10, {name: "kingPin", color: "green"});
 
-	// function animate(ts) {
-	// 	const delta = (ts - targetStart) / duration;
-	// 	const value = start + ((target - start) * delta);
-	// 	run(simulateSuspension, {shockLen: value});	
-	// 	if (delta >= 1) {
-	// 		const tmp = start;
-	// 		start = target;
-	// 		target = tmp;
-	// 		targetStart = ts;
-	// 	}
-	// 	requestAnimationFrame(animate);
-	// }
-	// requestAnimationFrame(animate);
-	// 
-/*
+		const anchors = {
+			shock: new Anchor(5, -5),
+			bottomArm: new Anchor(0, 0),
+			topArm: new Anchor(5, -10),
+		};
 
-the way it should work:
+		anchors.shock.link(shock.start);
+		shock.end.link(bottomArm.addMount(15));
 
-we have anchor points, and rods with mount points (with just a length)
+		anchors.bottomArm.link(bottomArm.start);
+		anchors.topArm.link(topArm.start);
 
-you can link mounts to other mounts (of another rod) or to anchor points
+		topArm.end.link(kingPin.start);
+		bottomArm.end.link(kingPin.end);
 
-between two anchor points, we find linked rods and then we check if those rods are directly linked. If so, resolve the link by resolving the two rods.
+		return Object.values(anchors);
+	}
 
-now, all the resolved points on the rod now become anchor points. anchor points of which all the links have been resolved should be removed from the list.
+	let start = 16;
+	const duration = 2000;
+	let targetStart = performance.now();
+	let target = 8;
 
-both a mount and an anchor can have links ... how do we unify this? we need to traverse links of mounts while trying to find two directly linked rods,
-and we need to traverse the links of anchors to find all linked rods to try and match up at a given mount.
+	function animate(ts) {
+		const delta = (ts - targetStart) / duration;
+		const value = start + ((target - start) * delta);
+		run(suspension, {shockLen: value});	
+		if (delta >= 1) {
+			const tmp = start;
+			start = target;
+			target = tmp;
+			targetStart = ts;
+		}
+		requestAnimationFrame(animate);
+	}
+	requestAnimationFrame(animate);
 
-so it is:
-anchor(p) -> mounts(n) -> rod -> mounts(n)
 
-so when turning a mount of a resolved segment into an anchor, how do we do it?
-well, we resolve a rod link through a path (e.g. anchors.shock -> shock.start -> shock.end -> bottomArm.middle -> bottomArm.start -> anchors.bottomArm).
-Only links not on that path (on different mounts on the same rods or the same mounts but linking to others) should be turned into anchors
-
-
-so the thing we currently fail to do is to check that the segment start points are in fact resolved? as it says this:
-
-> resolving link between bottomArm[2] (10.000000000000004) and kingPin[1] (0) at bottomArm[1]/kingPin[1]
-index.html:153 bottomArm after 24.820852687030783 2.987519353697449
-index.html:264 resolved as bottomArm (25) and kingPin (25)
- */
-
-function suspension(input) {
-	const shock = new Rod(input.shockLen, {name: "shock", color: "blue"});
-	const bottomArm = new Rod(25, {name: "bottomArm", color: "red"});
-	const topArm = new Rod(20, {name: "topArm", color: "red"});
-	const kingPin = new Rod(10, {name: "kingPin", color: "green"});
-
-	const anchors = {
-		shock: new Anchor(5, -5),
-		bottomArm: new Anchor(0, 0),
-		topArm: new Anchor(5, -10),
-	};
-
-	anchors.shock.link(shock.start);
-	shock.end.link(bottomArm.addMount(15));
-
-	anchors.bottomArm.link(bottomArm.start);
-	anchors.topArm.link(topArm.start);
-
-	topArm.end.link(kingPin.start);
-	bottomArm.end.link(kingPin.end);
-
-	return Object.values(anchors);
-}
-
-	run(suspension, {shockLen: 10}); //17 fails	
+//run(suspension, {shockLen: 10}); //17 fails	
 
 </script>
 </body>
