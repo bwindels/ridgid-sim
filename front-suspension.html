@@ -12,21 +12,7 @@
 <script type="module">
 	import {Rod} from "./src/rod.js";
 	import {Anchor} from "./src/link.js";
-	import {resolve} from "./src/resolve.js";
-
-	function run(sim, input) {
-		const anchors = suspension(input);
-		const resolvedBodies = resolve(anchors);
-		for (let i = 0; i < resolvedBodies.length; i += 1) {
-			const rb = resolvedBodies[i];
-			const node = drawing.childNodes[i];
-			if (node) {
-				rb.updateNode(node);
-			} else {
-				drawing.appendChild(rb.renderNode());
-			}
-		}
-	}
+	import {runWithRanges} from "./src/run.js";
 
 	function suspension(input) {
 		const shock = new Rod(input.shockLen, {name: "shock", color: "blue"});
@@ -52,17 +38,9 @@
 		return Object.values(anchors);
 	}
 
-	const range = document.getElementById("shockLen");
-	range.addEventListener("input", evt => {
-		try {
-			run(suspension, {shockLen: parseFloat(range.value)});
-			range.setCustomValidity("");
-		} catch (err) {
-			range.setCustomValidity(err.message);
-			range.reportValidity();
-		}
-	});
-	run(suspension, {shockLen: parseFloat(range.value)});
+	runWithRanges(suspension, {
+		shockLen: document.getElementById("shockLen")
+	}, document.getElementById("drawing"));
 </script>
 </body>
 </html>

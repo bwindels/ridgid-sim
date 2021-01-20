@@ -5,38 +5,23 @@
 	<meta charset="utf-8">
 </head>
 <body>
-	<div>
-		Steering lever position: <input type="range" id="shockLen" min="12" max="18" value="15" step="any">
-	</div>
+	<div>Steering lever position: <input type="range" id="leverPos" min="12" max="18" value="15" step="any"></div>
+	<div>Kingpin rod length: <input type="range" id="kingPinRodLen" min="15" max="20" value="17" step="any"></div>
 <svg id="drawing" viewBox="-10 -60 100 120" width="400" height="400" xmlns="http://www.w3.org/2000/svg"></svg>
 <script type="module">
 	import {Rod} from "./src/rod.js";
 	import {Pivot} from "./src/pivot.js";
 	import {Anchor} from "./src/link.js";
-	import {resolve} from "./src/resolve.js";
-
-	function run(sim, input) {
-		const anchors = steering(input);
-		const resolvedBodies = resolve(anchors);
-		for (let i = 0; i < resolvedBodies.length; i += 1) {
-			const rb = resolvedBodies[i];
-			const node = drawing.childNodes[i];
-			if (node) {
-				rb.updateNode(node);
-			} else {
-				drawing.appendChild(rb.renderNode());
-			}
-		}
-	}
+	import {runWithRanges} from "./src/run.js";
 
 	function steering(input) {
 		const steerRod = new Rod(60, {name: "steerRod", color: "blue"});
 		const pivotLeft = new Pivot({name: "pivotLeft", color: "green"});
 		const pivotRight = new Pivot({name: "pivotLeft", color: "green"});
 		const kingPinLeft = new Rod(15, {name: "kingPinLeft", color: "purple"});
-		const kingPinRodLeft = new Rod(17, {name: "kingPinRodLeft", color: "orange"});
+		const kingPinRodLeft = new Rod(input.kingPinRodLen, {name: "kingPinRodLeft", color: "orange"});
 		const kingPinRight = new Rod(15, {name: "kingPinRight", color: "purple"});
-		const kingPinRodRight = new Rod(17, {name: "kingPinRodRight", color: "orange"});
+		const kingPinRodRight = new Rod(input.kingPinRodLen, {name: "kingPinRodRight", color: "orange"});
 		const middleRod = new Rod(40, {name: "middleRod", color: "pink"});
 
 		const anchors = {
@@ -66,17 +51,10 @@
 		return Object.values(anchors);
 	}
 
-	const range = document.getElementById("shockLen");
-	range.addEventListener("input", evt => {
-		try {
-			run(steering, {leverPos: parseFloat(range.value)});
-			range.setCustomValidity("");
-		} catch (err) {
-			range.setCustomValidity(err.message);
-			range.reportValidity();
-		}
-	});
-	run(steering, {leverPos: parseFloat(range.value)});
+	runWithRanges(steering, {
+		leverPos: document.getElementById("leverPos"),
+		kingPinRodLen: document.getElementById("kingPinRodLen")
+	}, document.getElementById("drawing"));
 </script>
 </body>
 </html>
