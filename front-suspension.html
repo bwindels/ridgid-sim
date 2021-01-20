@@ -26,13 +26,6 @@
 				drawing.appendChild(rb.renderNode());
 			}
 		}
-		// const circle = drawing.childNodes[4] || document.createElementNS("http://www.w3.org/2000/svg", "circle");
-		// circle.setAttribute("cx", resolvedBodies[3].points[1].x);
-		// circle.setAttribute("cy", resolvedBodies[3].points[1].y);
-		// circle.setAttribute("stroke", "grey");
-		// circle.setAttribute("fill", "none");
-		// circle.setAttribute("r", 20);
-		// drawing.appendChild(circle);
 	}
 
 	function suspension(input) {
@@ -59,26 +52,6 @@
 		return Object.values(anchors);
 	}
 
-	let start = 15;
-	const duration = 2000;
-	let targetStart = performance.now();
-	let target = 10;
-
-	function animate(ts) {
-		const delta = (ts - targetStart) / duration;
-		const value = start + ((target - start) * delta);
-
-		run(suspension, {shockLen: value});
-
-		if (delta >= 1) {
-			const tmp = start;
-			start = target;
-			target = tmp;
-			targetStart = ts;
-		}
-		requestAnimationFrame(animate);
-	}
-	//requestAnimationFrame(animate);
 	const range = document.getElementById("shockLen");
 	range.addEventListener("input", evt => {
 		try {
@@ -90,9 +63,6 @@
 		}
 	});
 	run(suspension, {shockLen: parseFloat(range.value)});
-
-//run(suspension, {shockLen: 10}); //17 fails	
-
 </script>
 </body>
 </html>
