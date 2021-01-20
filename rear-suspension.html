@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<meta charset="utf-8">
+</head>
+<body>
+	<div>
+		Shock length: <input type="range" id="shockLen" min="10" max="15" value="12" step="any">
+	</div>
+<svg id="drawing" viewBox="-10 -30 60 60" width="400" height="400" xmlns="http://www.w3.org/2000/svg"></svg>
+<script type="module">
+	import {Rod} from "./src/rod.js";
+	import {Pivot} from "./src/pivot.js";
+	import {Anchor} from "./src/link.js";
+	import {resolve} from "./src/resolve.js";
+
+	function run(sim, input) {
+		const anchors = suspension(input);
+		const resolvedBodies = resolve(anchors);
+		for (let i = 0; i < resolvedBodies.length; i += 1) {
+			const rb = resolvedBodies[i];
+			const node = drawing.childNodes[i];
+			if (node) {
+				rb.updateNode(node);
+			} else {
+				drawing.appendChild(rb.renderNode());
+			}
+		}
+	}
+
+	function suspension(input) {
+		const suspensionPivot = new Pivot({name: "suspensionPivot", color: "red"});
+		const shock = new Rod(input.shockLen, {name: "shock", color: "blue"});
+
+		const anchors = {
+			axle: new Anchor(5, 0),
+			shock: new Anchor(20, 0),
+		};
+
+		anchors.shock.link(shock.start);
+		anchors.axle.link(suspensionPivot.center);
+		shock.end.link(suspensionPivot.addArm(8, 0), false);
+		suspensionPivot.addArm(30, -Math.PI / 4);
+
+		return Object.values(anchors);
+	}
+
+	let start = 15;
+	let targetStart = performance.now();
+	let target = 10;
+
+	const range = document.getElementById("shockLen");
+	range.addEventListener("input", evt => {
+		try {
+			run(suspension, {shockLen: parseFloat(range.value)});
+			range.setCustomValidity("");
+		} catch (err) {
+			range.setCustomValidity(err.message);
+			range.reportValidity();
+		}
+	});
+	run(suspension, {shockLen: parseFloat(range.value)});
+</script>
+</body>
+</html>

@@ -5,67 +5,10 @@
 	<meta charset="utf-8">
 </head>
 <body>
-<svg id="drawing" viewBox="-10 -30 60 60" width="400" height="400" xmlns="http://www.w3.org/2000/svg"></svg>
-<script type="module">
-	import {Rod} from "./src/rod.js";
-	import {Anchor} from "./src/link.js";
-	import {resolve} from "./src/resolve.js";
-
-	function run(sim, input) {
-		const anchors = sim(input);
-		const resolvedBodies = resolve(anchors);
-		drawing.innerHTML = "";
-		for (const rb of resolvedBodies) {
-			drawing.appendChild(rb.renderNode());
-		}
-	}
-
-	function suspension(input) {
-		const shock = new Rod(input.shockLen, {name: "shock", color: "blue"});
-		const bottomArm = new Rod(25, {name: "bottomArm", color: "red"});
-		const topArm = new Rod(20, {name: "topArm", color: "red"});
-		const kingPin = new Rod(10, {name: "kingPin", color: "green"});
-
-		const anchors = {
-			shock: new Anchor(5, -5),
-			bottomArm: new Anchor(0, 0),
-			topArm: new Anchor(5, -10),
-		};
-
-		anchors.shock.link(shock.start);
-		shock.end.link(bottomArm.addMount(15));
-
-		anchors.bottomArm.link(bottomArm.start);
-		anchors.topArm.link(topArm.start);
-
-		topArm.end.link(kingPin.start);
-		bottomArm.end.link(kingPin.end);
-
-		return Object.values(anchors);
-	}
-
-	let start = 16;
-	const duration = 2000;
-	let targetStart = performance.now();
-	let target = 8;
-
-	function animate(ts) {
-		const delta = (ts - targetStart) / duration;
-		const value = start + ((target - start) * delta);
-		run(suspension, {shockLen: value});	
-		if (delta >= 1) {
-			const tmp = start;
-			start = target;
-			target = tmp;
-			targetStart = ts;
-		}
-		requestAnimationFrame(animate);
-	}
-	requestAnimationFrame(animate);
-
-
-//run(suspension, {shockLen: 10}); //17 fails	
-
-</script>
+	<ul>
+		<li><a href="steering.html">Steering linkage</a></li>
+		<li><a href="rear-suspension.html">Rear suspension linkage</a></li>
+		<li><a href="front-suspension.html">Front suspension linkage</a></li>
+	</ul>
 </body>
 </html>

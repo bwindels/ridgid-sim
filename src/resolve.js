@@ -24,8 +24,8 @@ function resolveLink(entryMountA, pointA, entryMountB, pointB, link) {
 	const p = circleIntersection(pointA, rA, pointB, rB, link.firstOrSecondIntersection);
 	if (p) {
 		return [
-			bodyA.resolve(entryMountA, pointA, link, p),
-			bodyB.resolve(entryMountB, pointB, link, p),
+			bodyA.resolve(entryMountA, pointA, link.mountForBody(bodyA), p),
+			bodyB.resolve(entryMountB, pointB, link.mountForBody(bodyB), p),
 		];
 	}
 }
@@ -78,8 +78,9 @@ outerLoop:
 			}
 			// if we get here, we ran through the whole while loop without finding a link,
 			// which means we would loop forever, so bail out.
-			console.error("could not resolve all anchors");
-			return resolvedBodies;
+			const error = new Error("could not resolve all anchors, only resolved " + resolvedBodies.map(b => b.body.options.name).join(", "));
+			error.resolvedBodies = resolvedBodies;
+			throw error;
 		}
 	}
 	return resolvedBodies;
