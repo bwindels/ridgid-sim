@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<meta charset="utf-8">
+</head>
+<body>
+	<div>Shock length: <input type="range" id="shockLen" min="16" max="21" value="21" step="any"></div>
+	<div>Top arm length: <input type="range" id="topArm" min="5" max="15" value="10.965" step="any"></div>
+	<svg id="drawing" viewBox="-10 -30 60 60" width="400" height="400" xmlns="http://www.w3.org/2000/svg"></svg>
+	<script type="module">
+		import {Rod} from "./src/rod.js";
+		import {Anchor} from "./src/link.js";
+		import {runWithRanges} from "./src/run.js";
+
+		function suspension(input) {
+			const shock = new Rod(input.shockLen, {name: "shock", color: "blue"});
+			const bottomArm = new Rod(22.694, {name: "bottomArm", color: "red"});
+			const topArm = new Rod(input.topArm, {name: "topArm", color: "red"});
+			const kingPin = new Rod(14.350, {name: "kingPin", color: "green"});
+
+			const anchors = {
+				shock: new Anchor(-3, -13.5),
+				bottomArm: new Anchor(0, 0),
+				topArm: new Anchor(10, -15),
+			};
+
+			anchors.shock.link(shock.start);
+			shock.end.link(bottomArm.addMount(10.5));
+
+			anchors.bottomArm.link(bottomArm.start);
+			anchors.topArm.link(topArm.start);
+
+			topArm.end.link(kingPin.start);
+			bottomArm.end.link(kingPin.end);
+
+			return Object.values(anchors);
+		}
+
+		runWithRanges(suspension, {
+			shockLen: document.getElementById("shockLen"),
+			topArm: document.getElementById("topArm")
+		}, document.getElementById("drawing"));
+	</script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<meta charset="utf-8">
+</head>
+<body>
+	<div>
+		Shock length: <input type="range" id="shockLen" min="15" max="20" value="20" step="any">
+	</div>
+<svg id="drawing" viewBox="-20 -30 60 60" width="400" height="400" xmlns="http://www.w3.org/2000/svg"></svg>
+<script type="module">
+	import {Rod} from "./src/rod.js";
+	import {Pivot} from "./src/pivot.js";
+	import {Anchor} from "./src/link.js";
+	import {runWithRanges} from "./src/run.js";
+
+	function suspension(input) {
+		const suspensionPivot = new Pivot({name: "suspensionPivot", color: "red"});
+		const shock = new Rod(input.shockLen, {name: "shock", color: "blue"});
+
+		const anchors = {
+			axle: new Anchor(0, 0),
+			shock: new Anchor(-15, -14),
+		};
+
+		anchors.shock.link(shock.start);
+		anchors.axle.link(suspensionPivot.center);
+		shock.end.link(suspensionPivot.addArm(12, 0), false);
+		suspensionPivot.addArm(30, -Math.PI/4);
+
+		return Object.values(anchors);
+	}
+
+	runWithRanges(suspension, {
+		shockLen: document.getElementById("shockLen")
+	}, document.getElementById("drawing"));
+</script>
+</body>
+</html>
